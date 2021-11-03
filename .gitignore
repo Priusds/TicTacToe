@@ -1,4 +1,4 @@
 test*
 __pycache__/
 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
-deep_mcts/__pycache__/*
+deep_mcts/__pycache__/
