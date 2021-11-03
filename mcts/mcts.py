@@ -6,7 +6,7 @@ EXPLORATION_CONSTANT = math.sqrt(2)
 
 
 class MCTS:
-    def __init__(self, root, game):
+    def __init__(self, root):
         self.root = root
 
     def mcts_step(self):

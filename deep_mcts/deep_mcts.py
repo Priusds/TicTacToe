@@ -3,12 +3,36 @@ import math
 import torch
 
 
-EXPLORATION_CONSTANT = math.sqrt(2)
+EXPLORATION_CONSTANT = 1000*math.sqrt(2)
 
 
 class DMCTSTree:
-    def __init__(self):
-        pass
+    def __init__(self, state, model, game):
+        self.root = DMCTSNode(state, model, game)
+        self.policy = [1/(self.root.game["nActions"]) for i in range(self.root.game["nActions"])]
+
+    def mcts_step(self):
+        leaf = self.root.select()
+        value = leaf.expand_evaluate()
+        leaf.backup(value)
+
+    def simulate(self, n_simulations, temperature=1):
+        for _ in range(n_simulations):
+            self.mcts_step()
+        
+        self.policy_update(temperature)
+
+    def policy_update(self, temperature):
+        # TODO: speed up
+        self.policy = [self.root.edges[i]["N"]**(1/temperature) if i in self.root.edges.keys() else 0 for i in range(self.root.game["nActions"])]
+        norm = sum(self.policy)
+        for i in range(self.root.game["nActions"]):
+            self.policy[i] = self.policy[i]/norm
+       
+
+    def best_action(self):
+        return random.choices(range(self.root.game["nActions"]),self.policy)[0]
+    
 
 
 class DMCTSNode:
@@ -21,7 +45,6 @@ class DMCTSNode:
         self.game = game
         self.parent = parent
         self.action = action
-        self.is_root = True if parent is None else False
         self.available_actions = game["get_actions"](state)
 
 
@@ -50,7 +73,7 @@ class DMCTSNode:
         assert self.is_expanded is False
         self.model.eval()
 
-        p_v = torch.nn.functional.sigmoid(self.model(self.state))
+        p_v = torch.sigmoid(self.model(self.state))
         
         if not self.game["is_terminal"](self.state):
             for action in self.available_actions:
@@ -69,7 +92,7 @@ class DMCTSNode:
         return self.game["get_reward"](self.state) # TODO try also with just returning v
     
     def backup(self, value):
-        if not self.is_root:
+        if not self.parent is None:
             self.parent.edges[self.action]["N"] += 1
             self.parent.edges[self.action]["W"] += value
             self.parent.edges[self.action]["Q"] += self.parent.edges[self.action]["W"]/self.parent.edges[self.action]["N"]
@@ -80,4 +103,6 @@ def calculate_action_value(n, Q, N, P, player):
     assert N >= 0, n >= 0
     exploitation_term = player * Q 
     exploration_term = EXPLORATION_CONSTANT * P * math.sqrt(N)/(1+n)
+  #  print("expoit: ", exploitation_term)
+  #  print("explore: ", exploration_term)
     return exploitation_term + exploration_term

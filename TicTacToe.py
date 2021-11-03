@@ -114,6 +114,23 @@ def state_to_string(state):
 
     return string
 
+def state_to_string_torch(state):
+    symbol = {
+        1: "X",
+        -1: "O",
+        0: " "
+    }
+    board = state[0,0,:,:] - state[0,1,:,:]
+    string = ""
+    for i in range(3):
+        row = board[i,:]
+        string += symbol[row[0].item()]
+        string += "|"+symbol[row[1].item()]
+        string += ("|"+symbol[row[2].item()]+"\n")
+
+    return string
+
+
 
 TicTacToe = {
     "nActions":9,
@@ -136,5 +153,5 @@ TicTacToeTorch = {
     "nPositions":9,
     "get_reward":get_reward_torch,
     "action_to_idx":action_to_index,
-    "state_to_string":state_to_string
+    "state_to_string":state_to_string_torch
 }

@@ -76,5 +76,5 @@ class Net(nn.Module):
         return torch.cat((policy, value), dim=1)
 
     
-    def print_trainable_params(self):
-        print(sum(p.numel() for p in self.parameters() if p.requires_grad))
+    def trainable_params(self):
+        return (sum(p.numel() for p in self.parameters() if p.requires_grad))
